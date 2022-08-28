@@ -2,13 +2,13 @@ package com.mundane.douyincrawler.utils;
 
 import cn.hutool.json.JSONObject;
 import com.mundane.douyincrawler.dto.Video;
-import org.apache.commons.io.FileUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,7 +107,8 @@ public class ParseUtil {
                     .maxBodySize(30000000)
                     .timeout(10000)
                     .execute();
-            BufferedInputStream stream = document.bodyStream();
+            BufferedInputStream intputStream = document.bodyStream();
+            int contentLength = Integer.parseInt(document.header("Content-Length"));
             File fileSavePath = new File("D:/douyin/" + desc + ".mp4");
             // 如果保存文件夹不存在,那么则创建该文件夹
             File fileParent = fileSavePath.getParentFile();
@@ -117,9 +118,18 @@ public class ParseUtil {
             if (fileSavePath.exists()) { //如果文件存在，则删除原来的文件
                 fileSavePath.delete();
             }
-            FileUtils.copyInputStreamToFile(stream, fileSavePath);
-            //此方法建议可以使用下面copy大文件的方法性能会更好些
-            //IOUtils.copyLarge(stream, new FileOutputStream("D:\\123.mp4"));
+            FileOutputStream fs = new FileOutputStream(fileSavePath);
+            byte[] buffer = new byte[8 * 1024];
+            int byteRead;
+            int count = 0;
+            while ((byteRead = intputStream.read(buffer)) != -1) {
+                fs.write(buffer, 0, byteRead);
+                count += byteRead;
+                int progress = (int) (count * 100.0 / contentLength);
+                System.out.println("progress = " + progress + "%");
+            }
+            intputStream.close();
+            fs.close();
             System.out.println("\n-----视频保存路径-----\n" + fileSavePath.getAbsolutePath());
             return true;
         } catch (IOException e) {
