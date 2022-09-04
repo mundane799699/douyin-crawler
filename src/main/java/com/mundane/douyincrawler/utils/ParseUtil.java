@@ -1,5 +1,6 @@
 package com.mundane.douyincrawler.utils;
 
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.mundane.douyincrawler.dto.Video;
 import org.jsoup.Connection;
@@ -10,7 +11,9 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -86,6 +89,14 @@ public class ParseUtil {
         return video;
     }
 
+    public static int getAwemeType(String jsonStr) {
+        JSONObject json = new JSONObject(jsonStr);
+        JSONArray itemList = json.getJSONArray("item_list");
+        JSONObject jsonObject = itemList.getJSONObject(0);
+        int awesomeType = jsonObject.getInt("aweme_type");
+        return awesomeType;
+    }
+
     public static void downloadVideo(Video video) {
         String originVideoAddress = video.getVideoAddress();
         String desc = video.getDesc();
@@ -137,4 +148,56 @@ public class ParseUtil {
         }
         return false;
     }
+
+    public static List<String> getPicList(String jsonStr) {
+        List<String> picList = new ArrayList<>();
+
+        JSONObject json = new JSONObject(jsonStr);
+        JSONArray images = json.getJSONArray("item_list").getJSONObject(0).getJSONArray("images");
+        for (int i = 0; i < images.size(); i++) {
+            JSONObject jsonObject = images.getJSONObject(i);
+            JSONArray urlList = jsonObject.getJSONArray("url_list");
+            picList.add(urlList.get(0).toString());
+        }
+        return picList;
+    }
+
+    public static void downloadPic(String videoId, List<String> picList) {
+        for (int index = 0; index < picList.size(); index++) {
+            downloadPic(videoId, index, picList.get(index));
+        }
+        System.out.println("图片下载完成");
+    }
+
+    public static void downloadPic(String videoId, int index, String picUrl) {
+        try {
+            Connection.Response document = Jsoup.connect(picUrl)
+                    .ignoreContentType(true)
+                    .maxBodySize(30000000)
+                    .timeout(10000)
+                    .execute();
+            BufferedInputStream intputStream = document.bodyStream();
+            File fileSavePath = new File("D:/douyin/" + videoId + "_" + index + ".png");
+            // 如果保存文件夹不存在,那么则创建该文件夹
+            File fileParent = fileSavePath.getParentFile();
+            if (!fileParent.exists()) {
+                fileParent.mkdirs();
+            }
+            if (fileSavePath.exists()) { //如果文件存在，则删除原来的文件
+                fileSavePath.delete();
+            }
+            FileOutputStream fs = new FileOutputStream(fileSavePath);
+            byte[] buffer = new byte[8 * 1024];
+            int byteRead;
+            while ((byteRead = intputStream.read(buffer)) != -1) {
+                fs.write(buffer, 0, byteRead);
+            }
+            intputStream.close();
+            fs.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
 }
