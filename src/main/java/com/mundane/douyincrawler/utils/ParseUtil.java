@@ -100,14 +100,29 @@ public class ParseUtil {
     public static void downloadVideo(Video video) {
         String originVideoAddress = video.getVideoAddress();
         String desc = video.getDesc();
-        if (video.getWidth() > 720) {
-            String videoAddress1080 = originVideoAddress.replace("720p", "1080p");
-            if (!download(videoAddress1080, desc)) {
-                download(originVideoAddress, desc);
-            }
+        String videoAddress1080 = originVideoAddress.replace("720p", "1080p");
+        if (getContentLengthByAddress(videoAddress1080) > getContentLengthByAddress(originVideoAddress)) {
+            download(videoAddress1080, desc);
         } else {
             download(originVideoAddress, desc);
         }
+    }
+
+    private static int getContentLengthByAddress(String videoAddress) {
+        int contentLength = 0;
+        try {
+            Connection.Response document = Jsoup.connect(videoAddress)
+                    .ignoreContentType(true)
+                    .headers(headers)
+                    .timeout(10000)
+                    .execute();
+            contentLength = Integer.parseInt(document.header("Content-Length"));
+            System.out.println("contentLength = " + contentLength);
+            return contentLength;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return contentLength;
     }
 
     private static boolean download(String videoAddress, String desc) {
@@ -116,7 +131,7 @@ public class ParseUtil {
             Connection.Response document = Jsoup.connect(videoAddress)
                     .ignoreContentType(true)
                     .maxBodySize(30000000)
-                    .timeout(10000)
+                    .timeout(30000)
                     .execute();
             BufferedInputStream intputStream = document.bodyStream();
             int contentLength = Integer.parseInt(document.header("Content-Length"));
@@ -137,7 +152,6 @@ public class ParseUtil {
                 fs.write(buffer, 0, byteRead);
                 count += byteRead;
                 int progress = (int) (count * 100.0 / contentLength);
-                System.out.println("progress = " + progress + "%");
             }
             intputStream.close();
             fs.close();
