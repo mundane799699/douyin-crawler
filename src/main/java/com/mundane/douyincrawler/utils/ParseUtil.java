@@ -3,13 +3,9 @@ package com.mundane.douyincrawler.utils;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.mundane.douyincrawler.dto.Video;
-import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -51,6 +47,28 @@ public class ParseUtil {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static String getLocation(String url) {
+        try {
+            Document document = Jsoup.connect(url).headers(headers).get();
+            String location = document.location();
+            return location;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static String getSecUid(String location) {
+        String regex = "https://www.douyin.com/user/[-A-Za-z0-9+&@#/%=~_|!:,.;]+";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(location);
+        if (matcher.find()) {
+            String url = matcher.group();
+            return url.replace("https://www.douyin.com/user/", "");
         }
         return null;
     }
@@ -97,72 +115,6 @@ public class ParseUtil {
         return awesomeType;
     }
 
-    public static void downloadVideo(Video video) {
-        String originVideoAddress = video.getVideoAddress();
-        String desc = video.getDesc();
-        String videoAddress1080 = originVideoAddress.replace("720p", "1080p");
-        if (getContentLengthByAddress(videoAddress1080) > getContentLengthByAddress(originVideoAddress)) {
-            download(videoAddress1080, desc);
-        } else {
-            download(originVideoAddress, desc);
-        }
-    }
-
-    private static int getContentLengthByAddress(String videoAddress) {
-        int contentLength = 0;
-        try {
-            Connection.Response document = Jsoup.connect(videoAddress)
-                    .ignoreContentType(true)
-                    .headers(headers)
-                    .timeout(10000)
-                    .execute();
-            contentLength = Integer.parseInt(document.header("Content-Length"));
-            System.out.println("contentLength = " + contentLength);
-            return contentLength;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return contentLength;
-    }
-
-    private static boolean download(String videoAddress, String desc) {
-        System.out.println("videoAddress = " + videoAddress);
-        try {
-            Connection.Response document = Jsoup.connect(videoAddress)
-                    .ignoreContentType(true)
-                    .maxBodySize(30000000)
-                    .timeout(30000)
-                    .execute();
-            BufferedInputStream intputStream = document.bodyStream();
-            int contentLength = Integer.parseInt(document.header("Content-Length"));
-            File fileSavePath = new File("D:/douyin/" + desc + ".mp4");
-            // 如果保存文件夹不存在,那么则创建该文件夹
-            File fileParent = fileSavePath.getParentFile();
-            if (!fileParent.exists()) {
-                fileParent.mkdirs();
-            }
-            if (fileSavePath.exists()) { //如果文件存在，则删除原来的文件
-                fileSavePath.delete();
-            }
-            FileOutputStream fs = new FileOutputStream(fileSavePath);
-            byte[] buffer = new byte[8 * 1024];
-            int byteRead;
-            int count = 0;
-            while ((byteRead = intputStream.read(buffer)) != -1) {
-                fs.write(buffer, 0, byteRead);
-                count += byteRead;
-                int progress = (int) (count * 100.0 / contentLength);
-            }
-            intputStream.close();
-            fs.close();
-            System.out.println("\n-----视频保存路径-----\n" + fileSavePath.getAbsolutePath());
-            return true;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return false;
-    }
-
     public static List<String> getPicList(String jsonStr) {
         List<String> picList = new ArrayList<>();
 
@@ -174,43 +126,6 @@ public class ParseUtil {
             picList.add(urlList.get(0).toString());
         }
         return picList;
-    }
-
-    public static void downloadPic(String videoId, List<String> picList) {
-        for (int index = 0; index < picList.size(); index++) {
-            downloadPic(videoId, index, picList.get(index));
-        }
-        System.out.println("图片下载完成");
-    }
-
-    public static void downloadPic(String videoId, int index, String picUrl) {
-        try {
-            Connection.Response document = Jsoup.connect(picUrl)
-                    .ignoreContentType(true)
-                    .maxBodySize(30000000)
-                    .timeout(10000)
-                    .execute();
-            BufferedInputStream intputStream = document.bodyStream();
-            File fileSavePath = new File("D:/douyin/" + videoId + "_" + index + ".png");
-            // 如果保存文件夹不存在,那么则创建该文件夹
-            File fileParent = fileSavePath.getParentFile();
-            if (!fileParent.exists()) {
-                fileParent.mkdirs();
-            }
-            if (fileSavePath.exists()) { //如果文件存在，则删除原来的文件
-                fileSavePath.delete();
-            }
-            FileOutputStream fs = new FileOutputStream(fileSavePath);
-            byte[] buffer = new byte[8 * 1024];
-            int byteRead;
-            while ((byteRead = intputStream.read(buffer)) != -1) {
-                fs.write(buffer, 0, byteRead);
-            }
-            intputStream.close();
-            fs.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
 
