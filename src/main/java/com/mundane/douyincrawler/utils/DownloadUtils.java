@@ -1,7 +1,7 @@
-package com.mundane.douyincrawler;
+package com.mundane.douyincrawler.utils;
 
+import cn.hutool.json.JSONObject;
 import com.mundane.douyincrawler.dto.Video;
-import com.mundane.douyincrawler.utils.ParseUtil;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 
@@ -79,12 +79,12 @@ public class DownloadUtils {
         try {
             Connection.Response document = Jsoup.connect(videoAddress)
                     .ignoreContentType(true)
-                    .maxBodySize(30000000)
-                    .timeout(30000)
+                    .maxBodySize(0)
+                    .timeout(0)
                     .execute();
             BufferedInputStream intputStream = document.bodyStream();
             int contentLength = Integer.parseInt(document.header("Content-Length"));
-            File fileSavePath = new File("D:/douyin/" + desc + ".mp4");
+            File fileSavePath = new File("/Users/mundane/Desktop/" + desc + ".mp4");
             // 如果保存文件夹不存在,那么则创建该文件夹
             File fileParent = fileSavePath.getParentFile();
             if (!fileParent.exists()) {
@@ -148,4 +148,15 @@ public class DownloadUtils {
             e.printStackTrace();
         }
     }
+
+    public static void downloadVideoByObj(JSONObject obj) {
+
+        JSONObject detail = obj.getJSONObject("aweme").getJSONObject("detail");
+        String playApi = detail.getJSONObject("video").getStr("playApi");
+        String desc = detail.getStr("desc");
+        playApi = "https:" + playApi;
+        download(playApi, desc);
+
+    }
+
 }

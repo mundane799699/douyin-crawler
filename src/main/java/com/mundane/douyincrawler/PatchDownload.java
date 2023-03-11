@@ -2,17 +2,15 @@ package com.mundane.douyincrawler;
 
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
-import com.mundane.douyincrawler.dto.Video;
+import com.mundane.douyincrawler.utils.DownloadUtils;
 import com.mundane.douyincrawler.utils.ParseUtil;
-
-import java.util.List;
 
 public class PatchDownload {
     public static final String PREFIX = "https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=";
 
 
     public static void main(String[] args) {
-        String text = "1- 长按复制此条消息，打开抖音搜索，查看TA的更多作品。 https://v.douyin.com/6vkr2XG/";
+        String text = "0.02 HII:/ 复制打开抖音，看看【一个阿锐的作品】# 只属于秋季的浪漫 # 风和自由 爱到底有没有必要在... https://v.douyin.com/M1TT76n/";
         String url = ParseUtil.parseUrl(text);
         if (url == null) {
             System.out.println("url is null");

@@ -1,11 +1,9 @@
 package com.mundane.douyincrawler;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.NicelyResynchronizingAjaxController;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import com.mundane.douyincrawler.utils.ParseUtil;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -30,7 +28,7 @@ public class DouyinUserCrawler {
     public static void main(String[] args) {
 //        String userUrl = "https://www.douyin.com/user/MS4wLjABAAAAiK0274pDg-CiVvDA1ZINZBuQ6iZFet-gKVbmnNyBHLY";
 //        String userUrl = "https://v.douyin.com/6bFUWMG/";
-        String userUrl = "https://v.douyin.com/6bFUWMG/";
+        String userUrl = "https://v.douyin.com/MJGusmD/";
         try {
             //构造一个webClient 模拟Chrome 浏览器
             WebClient webClient = new WebClient(BrowserVersion.CHROME);
@@ -43,10 +41,11 @@ public class DouyinUserCrawler {
             webClient.getOptions().setThrowExceptionOnFailingStatusCode(false);
             webClient.getOptions().setTimeout(timeout);
             webClient.setJavaScriptTimeout(timeout);//设置JS执行的超时时间
+            webClient.setAjaxController(new NicelyResynchronizingAjaxController());//很重要，设置支持AJAX
 
             HtmlPage page = webClient.getPage(userUrl);
             //设置一个运行JavaScript的时间
-//            webClient.waitForBackgroundJavaScript(10000);
+            webClient.waitForBackgroundJavaScript(10000);
             String html = page.asXml();
             webClient.close();
 //            Document document = Jsoup.parse(html);
