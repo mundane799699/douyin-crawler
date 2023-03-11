@@ -26,3 +26,5 @@ hs_err_pid*
 
 .idea/
 douyin-crawler.iml
+target/
+video/
