@@ -84,16 +84,18 @@ public class DownloadUtils {
                     .execute();
             BufferedInputStream intputStream = document.bodyStream();
             int contentLength = Integer.parseInt(document.header("Content-Length"));
-            File fileSavePath = new File("/Users/mundane/Desktop/" + desc + ".mp4");
+//            File fileSavePath = new File("/Users/mundane/Desktop/" + desc + ".mp4");
+
             // 如果保存文件夹不存在,那么则创建该文件夹
-            File fileParent = fileSavePath.getParentFile();
+            File fileParent = new File("video");
             if (!fileParent.exists()) {
                 fileParent.mkdirs();
             }
-            if (fileSavePath.exists()) { //如果文件存在，则删除原来的文件
-                fileSavePath.delete();
+            File videoFile = new File(fileParent, desc + ".mp4");
+            if (videoFile.exists()) { //如果文件存在，则删除原来的文件
+                videoFile.delete();
             }
-            FileOutputStream fs = new FileOutputStream(fileSavePath);
+            FileOutputStream fs = new FileOutputStream(videoFile);
             byte[] buffer = new byte[8 * 1024];
             int byteRead;
             int count = 0;
@@ -104,7 +106,7 @@ public class DownloadUtils {
             }
             intputStream.close();
             fs.close();
-            System.out.println("\n-----视频保存路径-----\n" + fileSavePath.getAbsolutePath());
+            System.out.println("\n-----视频保存路径-----\n" + videoFile.getAbsolutePath());
             return true;
         } catch (IOException e) {
             e.printStackTrace();
