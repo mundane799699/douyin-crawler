@@ -1,6 +1,5 @@
 package com.mundane.douyincrawler.utils;
 
-import cn.hutool.core.net.URLDecoder;
 import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.mundane.douyincrawler.dto.Video;
@@ -9,7 +8,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,6 +22,7 @@ public class ParseUtil {
         put("user-agent", "'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36 Edg/110.0.1587.41'");
     }};
 
+
     public static String parseUrl(String text) {
         String regex = "https://v.douyin.com[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]";
         Pattern pattern = Pattern.compile(regex);
@@ -34,42 +34,64 @@ public class ParseUtil {
         return null;
     }
 
-    public static JSONObject parseVideoId(String url) {
+    public static String getAwesomeUrl(String url) {
         try {
             Document document = Jsoup.connect(url).headers(headers).get();
             String location = document.location();
-            System.out.println("localtion1 = " + location);
             headers.put("cookie", "ttwid=1|Udxr5TJi8rMkH6nyoGdUyWPxRbrRfhDHSmYNNhCN06s|1675693365|85039e91f5d9b2db99b49de1f2caf02019ddea8ac163a56638a3b181aa0b8675;__ac_nonce=063ecb18600d85d0e99a8;__ac_signature=_02B4Z6wo00f016FV-JAAAIDDIVcC04mr9BOhdfwAAIvC64;__ac_referer=__ac_blank");
             document = Jsoup.connect(location).headers(headers).get();
             location = document.location();
-            System.out.println("location2 = " + location);
+            return location;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
-            if (location.contains("?")) {
-                location = location.split("\\?")[0];
+    public static JSONObject getData(String awesomeUrl) {
+        try {
+            if (awesomeUrl.contains("?")) {
+                awesomeUrl = awesomeUrl.split("\\?")[0];
             }
-            System.out.println("location = " + location);
             headers.put("referer", "https://www.iesdouyin.com/");
-            document = Jsoup
-                    .connect(url)
+            Document document = Jsoup
+                    .connect(awesomeUrl)
                     .headers(headers)
                     .ignoreContentType(true)
                     .get();
             Element element = document.selectFirst("script#RENDER_DATA[type=application/json]");
             String html = element.html();
-            String decodedStr = URLDecoder.decode(html, StandardCharsets.UTF_8);
+            String decodedStr = URLDecoder.decode(html, "UTF-8");
             JSONObject json = new JSONObject(decodedStr);
-            for (Map.Entry<String, Object> entry : json.entrySet()) {
-                System.out.println(entry.getKey());
-                Object value = entry.getValue();
-                if (value instanceof JSONObject) {
-                    JSONObject obj = (JSONObject) value;
-                    if (obj.containsKey("aweme")) {
-                        return obj;
-                    }
-                }
-            }
+            return json;
         } catch (IOException e) {
             e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static JSONObject getAwesomeInfo(JSONObject data) {
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof JSONObject) {
+                JSONObject obj = (JSONObject) value;
+                if (obj.containsKey("aweme")) {
+                    return obj;
+                }
+            }
+        }
+        return null;
+    }
+
+    public static JSONObject getPostInfo(JSONObject data) {
+        for (Map.Entry<String, Object> entry : data.entrySet()) {
+            Object value = entry.getValue();
+            if (value instanceof JSONObject) {
+                JSONObject obj = (JSONObject) value;
+                if (obj.containsKey("post")) {
+                    return obj;
+                }
+            }
         }
         return null;
     }

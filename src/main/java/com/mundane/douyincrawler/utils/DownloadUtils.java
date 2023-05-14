@@ -1,5 +1,6 @@
 package com.mundane.douyincrawler.utils;
 
+import cn.hutool.json.JSONArray;
 import cn.hutool.json.JSONObject;
 import com.mundane.douyincrawler.dto.Video;
 import org.jsoup.Connection;
@@ -10,8 +11,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DownloadUtils {
     private static final String PREFIX = "https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=";
@@ -25,26 +27,6 @@ public class DownloadUtils {
         put("sec-ch-ua-platform", "\"Windows\"");
     }};
 
-    public static void downloadVideoOrPic(String awemeId) {
-        String url = PREFIX + awemeId;
-        String videJsonStr = ParseUtil.getJsonStr(url);
-        if (videJsonStr == null) {
-            System.out.println("jsonStr is null");
-        }
-        int awemeType = ParseUtil.getAwemeType(videJsonStr);
-        System.out.println("awesomeType = " + awemeType);
-        if (awemeType == TYPE_VIDEO) {
-            Video video = ParseUtil.getVideo(videJsonStr);
-            if (video == null) {
-                System.out.println("video is null");
-                return;
-            }
-            downloadVideo(video);
-        } else if (awemeType == TYPE_PIC) {
-            List<String> picList = ParseUtil.getPicList(videJsonStr);
-            downloadPic(awemeId, picList);
-        }
-    }
 
     public static void downloadVideo(Video video) {
         String originVideoAddress = video.getVideoAddress();
@@ -114,45 +96,56 @@ public class DownloadUtils {
         return false;
     }
 
-    public static void downloadPic(String awemeId, List<String> picList) {
-        for (int index = 0; index < picList.size(); index++) {
-            downloadPic(awemeId, index, picList.get(index));
+    public static void downloadPic(JSONObject videoInfo) {
+        JSONObject detail = videoInfo.getJSONObject("aweme").getJSONObject("detail");
+        String title = detail.getStr("desc");
+        JSONArray images = detail.getJSONArray("images");
+
+        for (int index = 0; index < images.size(); index++) {
+            int count = index + 1;
+            JSONObject image = (JSONObject) images.get(index);
+            JSONArray urlList = image.getJSONArray("urlList");
+            downloadPic(title, count, urlList.get(urlList.size() - 1).toString());
         }
         System.out.println("图片下载完成");
     }
 
-    public static void downloadPic(String aswmeId, int index, String picUrl) {
+    public static final Pattern PATTERN = Pattern.compile("[\\s\\\\/:\\*\\?\\\"<>\\|]");
+
+    public static void downloadPic(String title, int index, String picUrl) {
         try {
+            Matcher matcher = PATTERN.matcher(title);
+            // 将匹配到的非法字符以空替换
+            title = matcher.replaceAll("");
             Connection.Response document = Jsoup.connect(picUrl)
                     .ignoreContentType(true)
-                    .maxBodySize(30000000)
-                    .timeout(10000)
+                    .maxBodySize(0)
+                    .timeout(0)
                     .execute();
-            BufferedInputStream intputStream = document.bodyStream();
-            File fileSavePath = new File("D:/douyin/" + aswmeId + "_" + index + ".png");
-            // 如果保存文件夹不存在,那么则创建该文件夹
-            File fileParent = fileSavePath.getParentFile();
+            BufferedInputStream inputStream = document.bodyStream();
+            File fileParent = new File("notes");
             if (!fileParent.exists()) {
                 fileParent.mkdirs();
             }
-            if (fileSavePath.exists()) { //如果文件存在，则删除原来的文件
-                fileSavePath.delete();
+            File picPath = new File(fileParent, title + "_" + index + ".jpeg");
+            // 如果保存文件夹不存在,那么则创建该文件夹
+            if (picPath.exists()) { //如果文件存在，则删除原来的文件
+                picPath.delete();
             }
-            FileOutputStream fs = new FileOutputStream(fileSavePath);
+            FileOutputStream fs = new FileOutputStream(picPath);
             byte[] buffer = new byte[8 * 1024];
             int byteRead;
-            while ((byteRead = intputStream.read(buffer)) != -1) {
+            while ((byteRead = inputStream.read(buffer)) != -1) {
                 fs.write(buffer, 0, byteRead);
             }
-            intputStream.close();
+            inputStream.close();
             fs.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public static void downloadVideoByObj(JSONObject obj) {
-
+    public static void downloadVideo(JSONObject obj) {
         JSONObject detail = obj.getJSONObject("aweme").getJSONObject("detail");
         String playApi = detail.getJSONObject("video").getStr("playApi");
         String desc = detail.getStr("desc");
@@ -161,4 +154,7 @@ public class DownloadUtils {
 
     }
 
+    public static void downloadUser(JSONObject postInfo) {
+
+    }
 }
