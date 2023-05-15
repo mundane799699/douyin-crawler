@@ -16,45 +16,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class DownloadUtils {
-    private static final String PREFIX = "https://www.iesdouyin.com/web/api/v2/aweme/iteminfo/?item_ids=";
-
-    private static final int TYPE_VIDEO = 4;
-    private static final int TYPE_PIC = 2;
-
-    public static Map<String, String> headers = new HashMap<String, String>() {{
-        put("user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36");
-        put("pragma", "no-cache");
-        put("sec-ch-ua-platform", "\"Windows\"");
-    }};
-
-
-    public static void downloadVideo(Video video) {
-        String originVideoAddress = video.getVideoAddress();
-        String desc = video.getDesc();
-        String videoAddress1080 = originVideoAddress.replace("720p", "1080p");
-        if (getContentLengthByAddress(videoAddress1080) > getContentLengthByAddress(originVideoAddress)) {
-            download(videoAddress1080, desc);
-        } else {
-            download(originVideoAddress, desc);
-        }
-    }
-
-    private static int getContentLengthByAddress(String videoAddress) {
-        int contentLength = 0;
-        try {
-            Connection.Response document = Jsoup.connect(videoAddress)
-                    .ignoreContentType(true)
-                    .headers(headers)
-                    .timeout(10000)
-                    .execute();
-            contentLength = Integer.parseInt(document.header("Content-Length"));
-            System.out.println("contentLength = " + contentLength);
-            return contentLength;
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return contentLength;
-    }
 
     private static boolean download(String videoAddress, String desc) {
         System.out.println("videoAddress = " + videoAddress);
@@ -157,4 +118,6 @@ public class DownloadUtils {
     public static void downloadUser(JSONObject postInfo) {
 
     }
+
+
 }
